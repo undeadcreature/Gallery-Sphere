@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Art Gallery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #4895ef;
+            --danger: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --success: #4cc9f0;
+        }
+        
+        /* Reset & Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        /* Layout Structure */
+        .admin-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem 0;
+            position: fixed;
+            height: 100%;
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+        
+        .sidebar-header {
+            padding: 0 1.5rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-header h2 {
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .sidebar-header h2 i {
+            color: var(--accent);
+        }
+        
+        .nav-menu {
+            margin-top: 1.5rem;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-item i {
+            margin-right: 0.75rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left-color: var(--accent);
+        }
+        
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+        
+        /* Header Styles */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .top-bar h1 {
+            font-size: 1.8rem;
+            color: var(--dark);
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logout-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: #d91a6d;
+        }
+        
+        /* Tab Content Styles */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Dashboard Tab */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stat-card h3 {
+            font-size: 1rem;
+            color: var(--gray);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        /* Upload Form Styles */
+        .upload-form {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .file-upload {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-upload:hover {
+            border-color: var(--accent);
+            background: rgba(67, 97, 238, 0.05);
+        }
+        
+        .file-upload i {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .file-upload input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn:hover {
+            background: var(--secondary);
+        }
+        
+        .btn i {
+            font-size: 0.9rem;
+        }
+        
+        /* Gallery Management Styles */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .artwork-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .artwork-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .artwork-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .artwork-body {
+            padding: 1.25rem;
+        }
+        
+        .artwork-title {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+        
+        .artwork-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        .artwork-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            padding: 0.5rem;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            transition: all 0.3s;
+        }
+        
+        .edit-btn {
+            background: rgba(72, 149, 239, 0.1);
+            color: var(--accent);
+        }
+        
+        .edit-btn:hover {
+            background: rgba(72, 149, 239, 0.2);
+        }
+        
+        .delete-btn {
+            background: rgba(247, 37, 133, 0.1);
+            color: var(--danger);
+        }
+        
+        .delete-btn:hover {
+            background: rgba(247, 37, 133, 0.2);
+        }
+        
+        /* Status Messages */
+        .status-message {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+        
+        .status-message.success {
+            background: rgba(76, 201, 240, 0.1);
+            border-left: 4px solid var(--success);
+            color: var(--dark);
+            display: block;
+        }
+        
+        .status-message.error {
+            background: rgba(247, 37, 133, 0.1);
+            border-left: 4px solid var(--danger);
+            color: var(--dark);
+            display: block;
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 240px;
+            }
+            .main-content {
+                margin-left: 240px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .admin-container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                position: relative;
+                height: auto;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-palette"></i> Art Gallery Admin</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-tab="dashboard">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="#" class="nav-item" data-tab="upload">
+                    <i class="fas fa-cloud-upload-alt"></i> Upload Artwork
+                </a>
+                <a href="#" class="nav-item" data-tab="manage">
+                    <i class="fas fa-images"></i> Manage Gallery
+                </a>
+                <a href="#" class="nav-item" data-tab="settings">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Bar with Logout -->
+            <div class="top-bar">
+                <h1>Admin Dashboard</h1>
+                <div class="user-menu">
+                    <button class="logout-btn" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status Message Area -->
+            <div id="statusMessage" class="status-message"></div>
+
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Artworks</h3>
+                        <div class="value" id="totalArtworks">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Small Artworks</h3>
+                        <div class="value" id="smallArtworks">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Medium Artworks</h3>
+                        <div class="value" id="mediumArtworks">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Large Artworks</h3>
+                        <div class="value" id="largeArtworks">0</div>
+                    </div>
+                </div>
+
+                <h2>Recent Uploads</h2>
+                <div class="gallery-grid" id="recentArtworks">
+                    <!-- Recent artworks will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Upload Artwork Tab -->
+            <div id="upload" class="tab-content">
+                <div class="upload-form">
+                    <h2><i class="fas fa-cloud-upload-alt"></i> Upload New Artwork</h2>
+                    <form id="uploadForm">
+                        <div class="form-group">
+                            <label for="imageFile">Select Image</label>
+                            <div class="file-upload">
+                                <i class="fas fa-image"></i>
+                                <p>Click to browse or drag & drop</p>
+                                <input type="file" id="imageFile" accept="image/*" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="imageSize">Artwork Size</label>
+                            <select id="imageSize" class="form-control" required>
+                                <option value="">Select size...</option>
+                                <option value="small">Small (500px)</option>
+                                <option value="medium" selected>Medium (1000px)</option>
+                                <option value="large">Large (2000px)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="imageCaption">Caption/Description</label>
+                            <textarea id="imageCaption" class="form-control" placeholder="Enter artwork caption..." required></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn">
+                            <i class="fas fa-upload"></i> Upload Artwork
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Manage Gallery Tab -->
+            <div id="manage" class="tab-content">
+                <h2><i class="fas fa-images"></i> Manage Artworks</h2>
+                <div class="gallery-grid" id="adminGallery">
+                    <!-- All artworks will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <div class="upload-form">
+                    <h2><i class="fas fa-cog"></i> Admin Settings</h2>
+                    <form id="settingsForm">
+                        <div class="form-group">
+                            <label for="adminEmail">Admin Email</label>
+                            <input type="email" id="adminEmail" class="form-control" placeholder="Your admin email" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="currentPassword">Current Password</label>
+                            <input type="password" id="currentPassword" class="form-control" placeholder="Enter current password">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="newPassword">New Password</label>
+                            <input type="password" id="newPassword" class="form-control" placeholder="Enter new password">
+                        </div>
+                        
+                        <button type="submit" class="btn">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Tab Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all nav items
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                
+                // Add active class to clicked nav item
+                this.classList.add('active');
+                
+                // Hide all tab content
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                
+                // Show the selected tab content
+                const tabId = this.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Logout Functionality
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            // Add your logout logic here
+            alert('Logging out...');
+            // window.location.href = 'login.html';
+        });
+
+        // Simulate loading data
+        setTimeout(() => {
+            document.getElementById('totalArtworks').textContent = '24';
+            document.getElementById('smallArtworks').textContent = '8';
+            document.getElementById('mediumArtworks').textContent = '12';
+            document.getElementById('largeArtworks').textContent = '4';
+            
+            // Simulate recent artworks
+            const recentContainer = document.getElementById('recentArtworks');
+            for (let i = 0; i < 4; i++) {
+                recentContainer.innerHTML += `
+                    <div class="artwork-card">
+                        <img src="https://source.unsplash.com/random/300x200?art=${i}" alt="Artwork ${i+1}" class="artwork-img">
+                        <div class="artwork-body">
+                            <h3 class="artwork-title">Artwork ${i+1}</h3>
+                            <div class="artwork-meta">
+                                <span>Medium</span>
+                                <span>${new Date().toLocaleDateString()}</span>
+                            </div>
+                            <div class="artwork-actions">
+                                <button class="action-btn edit-btn">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="action-btn delete-btn">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Simulate all artworks in manage gallery
+            const galleryContainer = document.getElementById('adminGallery');
+            for (let i = 0; i < 12; i++) {
+                const sizes = ['small', 'medium', 'large'];
+                const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
+                
+                galleryContainer.innerHTML += `
+                    <div class="artwork-card">
+                        <img src="https://source.unsplash.com/random/300x200?art=${i+4}" alt="Artwork ${i+5}" class="artwork-img">
+                        <div class="artwork-body">
+                            <h3 class="artwork-title">Artwork ${i+5}</h3>
+                            <div class="artwork-meta">
+                                <span>${randomSize.charAt(0).toUpperCase() + randomSize.slice(1)}</span>
+                                <span>${new Date().toLocaleDateString()}</span>
+                            </div>
+                            <div class="artwork-actions">
+                                <button class="action-btn edit-btn">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="action-btn delete-btn">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }, 1000);
+
+        // Show success message (example)
+        function showSuccessMessage(message) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = 'status-message success';
+            setTimeout(() => {
+                statusEl.className = 'status-message';
+            }, 5000);
+        }
+
+        // Show error message (example)
+        function showErrorMessage(message) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = 'status-message error';
+            setTimeout(() => {
+                statusEl.className = 'status-message';
+            }, 5000);
+        }
+
+        // Example: Show success message on form submission
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            showSuccessMessage('Artwork uploaded successfully!');
+            this.reset();
+        });
+
+        // Example: Show error message
+        // showErrorMessage('Failed to upload artwork. Please try again.');
+    </script>
+</body>
+</html>
