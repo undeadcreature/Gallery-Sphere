@@ -12,10 +12,16 @@ const firebaseConfig = {
   const app = firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const provider = new firebase.auth.GoogleAuthProvider();
-  
+  const storage = firebase.storage();
+
+
+
 // Add this to your firebase-config.js
 const cloudinaryConfig = {
     cloudName: 'dadcbiejy',
     apiKey: '421278875472999',
-    uploadPreset: '' // Create this in Cloudinary
+    uploadPreset: 'art_gallery_upload' // Create this in Cloudinary
 };
+
+window.auth = auth;
+window.db = db;

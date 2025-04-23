@@ -416,6 +416,22 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
     </style>
 </head>
 <body>
@@ -557,15 +573,26 @@
     </div>
 
     <script>
+         
+        // DOM Elements
+        const logoutBtn = document.getElementById('logoutBtn');
+        const uploadForm = document.getElementById('uploadForm');
+        const adminGallery = document.getElementById('adminGallery');
+        const recentArtworks = document.getElementById('recentArtworks');
+        const totalArtworksEl = document.getElementById('totalArtworks');
+        const smallArtworksEl = document.getElementById('smallArtworks');
+        const mediumArtworksEl = document.getElementById('mediumArtworks');
+        const largeArtworksEl = document.getElementById('largeArtworks');
+        const statusMessage = document.getElementById('statusMessage');
+        const navItems = document.querySelectorAll('.nav-item');
+    
         // Tab Navigation
-        document.querySelectorAll('.nav-item').forEach(item => {
+        navItems.forEach(item => {
             item.addEventListener('click', function(e) {
                 e.preventDefault();
                 
                 // Remove active class from all nav items
-                document.querySelectorAll('.nav-item').forEach(nav => {
-                    nav.classList.remove('active');
-                });
+                navItems.forEach(nav => nav.classList.remove('active'));
                 
                 // Add active class to clicked nav item
                 this.classList.add('active');
@@ -580,104 +607,346 @@
                 document.getElementById(tabId).classList.add('active');
             });
         });
-
+    
+        // Authentication State Listener
+        auth.onAuthStateChanged(user => {
+            if (!user) {
+                window.location.href = 'login.html';
+            } else {
+                loadStatistics();
+                loadAdminGallery();
+                loadRecentArtworks();
+            }
+        });
+    
         // Logout Functionality
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            // Add your logout logic here
-            alert('Logging out...');
-            // window.location.href = 'login.html';
+        logoutBtn.addEventListener('click', () => {
+            logoutBtn.innerHTML = '<span class="loading"></span> Logging out...';
+            auth.signOut()
+                .then(() => window.location.href = 'login.html')
+                .catch(error => {
+                    showErrorMessage(error.message);
+                    logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
+                });
         });
-
-        // Simulate loading data
-        setTimeout(() => {
-            document.getElementById('totalArtworks').textContent = '24';
-            document.getElementById('smallArtworks').textContent = '8';
-            document.getElementById('mediumArtworks').textContent = '12';
-            document.getElementById('largeArtworks').textContent = '4';
-            
-            // Simulate recent artworks
-            const recentContainer = document.getElementById('recentArtworks');
-            for (let i = 0; i < 4; i++) {
-                recentContainer.innerHTML += `
-                    <div class="artwork-card">
-                        <img src="https://source.unsplash.com/random/300x200?art=${i}" alt="Artwork ${i+1}" class="artwork-img">
-                        <div class="artwork-body">
-                            <h3 class="artwork-title">Artwork ${i+1}</h3>
-                            <div class="artwork-meta">
-                                <span>Medium</span>
-                                <span>${new Date().toLocaleDateString()}</span>
-                            </div>
-                            <div class="artwork-actions">
-                                <button class="action-btn edit-btn">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                                <button class="action-btn delete-btn">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Simulate all artworks in manage gallery
-            const galleryContainer = document.getElementById('adminGallery');
-            for (let i = 0; i < 12; i++) {
-                const sizes = ['small', 'medium', 'large'];
-                const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
-                
-                galleryContainer.innerHTML += `
-                    <div class="artwork-card">
-                        <img src="https://source.unsplash.com/random/300x200?art=${i+4}" alt="Artwork ${i+5}" class="artwork-img">
-                        <div class="artwork-body">
-                            <h3 class="artwork-title">Artwork ${i+5}</h3>
-                            <div class="artwork-meta">
-                                <span>${randomSize.charAt(0).toUpperCase() + randomSize.slice(1)}</span>
-                                <span>${new Date().toLocaleDateString()}</span>
-                            </div>
-                            <div class="artwork-actions">
-                                <button class="action-btn edit-btn">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                                <button class="action-btn delete-btn">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-        }, 1000);
-
-        // Show success message (example)
-        function showSuccessMessage(message) {
-            const statusEl = document.getElementById('statusMessage');
-            statusEl.textContent = message;
-            statusEl.className = 'status-message success';
-            setTimeout(() => {
-                statusEl.className = 'status-message';
-            }, 5000);
-        }
-
-        // Show error message (example)
-        function showErrorMessage(message) {
-            const statusEl = document.getElementById('statusMessage');
-            statusEl.textContent = message;
-            statusEl.className = 'status-message error';
-            setTimeout(() => {
-                statusEl.className = 'status-message';
-            }, 5000);
-        }
-
-        // Example: Show success message on form submission
-        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    
+        // Upload Form Handler
+        uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            showSuccessMessage('Artwork uploaded successfully!');
-            this.reset();
+            
+            const file = document.getElementById('imageFile').files[0];
+            const size = document.getElementById('imageSize').value;
+            const caption = document.getElementById('imageCaption').value;
+            
+            if (!file || !caption) {
+                showErrorMessage('Please fill all fields');
+                return;
+            }
+    
+            const submitBtn = uploadForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="loading"></span> Uploading...';
+            submitBtn.disabled = true;
+    
+            try {
+                // 1. Upload to Cloudinary
+                const imageUrl = await uploadToCloudinary(file);
+                
+                // 2. Save to Firestore
+                await db.collection('artworks').add({
+                    imageUrl,
+                    caption,
+                    size,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showSuccessMessage('Artwork uploaded successfully!');
+                uploadForm.reset();
+                loadStatistics();
+                loadAdminGallery();
+                loadRecentArtworks();
+            } catch (error) {
+                console.error('Upload error:', error);
+                showErrorMessage('Upload failed: ' + error.message);
+            } finally {
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            }
         });
-
-        // Example: Show error message
-        // showErrorMessage('Failed to upload artwork. Please try again.');
+    
+        // Cloudinary Upload Function
+        async function uploadToCloudinary(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', cloudinaryConfig.uploadPreset);
+            
+            const response = await fetch(
+                `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`,
+                { method: 'POST', body: formData }
+            );
+            
+            if (!response.ok) {
+                throw new Error('Failed to upload image to Cloudinary');
+            }
+            
+            const data = await response.json();
+            return data.secure_url;
+        }
+    
+        // Load Statistics
+        async function loadStatistics() {
+            try {
+                const snapshot = await db.collection('artworks').get();
+                const counts = { small: 0, medium: 0, large: 0 };
+                
+                snapshot.forEach(doc => {
+                    const size = doc.data().size;
+                    counts[size] = (counts[size] || 0) + 1;
+                });
+                
+                totalArtworksEl.textContent = snapshot.size;
+                smallArtworksEl.textContent = counts.small;
+                mediumArtworksEl.textContent = counts.medium;
+                largeArtworksEl.textContent = counts.large;
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+                showErrorMessage('Failed to load statistics');
+            }
+        }
+    
+        // Load All Artworks for Management
+        async function loadAdminGallery() {
+            try {
+                adminGallery.innerHTML = '<p>Loading artworks...</p>';
+                const snapshot = await db.collection('artworks')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                
+                adminGallery.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    adminGallery.innerHTML = '<p>No artworks found. Upload some!</p>';
+                    return;
+                }
+                
+                snapshot.forEach(doc => {
+                    adminGallery.appendChild(createArtworkCard(doc.id, doc.data()));
+                });
+            } catch (error) {
+                console.error('Error loading gallery:', error);
+                showErrorMessage('Failed to load gallery');
+            }
+        }
+    
+        // Load Recent Artworks for Dashboard
+        async function loadRecentArtworks() {
+            try {
+                recentArtworks.innerHTML = '<p>Loading recent artworks...</p>';
+                const snapshot = await db.collection('artworks')
+                    .orderBy('createdAt', 'desc')
+                    .limit(4)
+                    .get();
+                
+                recentArtworks.innerHTML = '';
+                
+                snapshot.forEach(doc => {
+                    recentArtworks.appendChild(createArtworkCard(doc.id, doc.data()));
+                });
+            } catch (error) {
+                console.error('Error loading recent artworks:', error);
+            }
+        }
+    
+        // Create Artwork Card Element
+        function createArtworkCard(id, artwork) {
+            const card = document.createElement('div');
+            card.className = 'artwork-card';
+            card.innerHTML = `
+                <img src="${getOptimizedUrl(artwork.imageUrl, 300)}" 
+                     alt="${artwork.caption}" 
+                     class="artwork-img">
+                <div class="artwork-body">
+                    <h3 class="artwork-title">${artwork.caption}</h3>
+                    <div class="artwork-meta">
+                        <span>${artwork.size.charAt(0).toUpperCase() + artwork.size.slice(1)}</span>
+                        <span>${artwork.createdAt?.toDate().toLocaleDateString()}</span>
+                    </div>
+                    <div class="artwork-actions">
+                        <button class="action-btn edit-btn" data-id="${id}">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="action-btn delete-btn" data-id="${id}">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Add delete functionality
+            card.querySelector('.delete-btn').addEventListener('click', async (e) => {
+                if (confirm('Delete this artwork permanently?')) {
+                    try {
+                        await db.collection('artworks').doc(id).delete();
+                        showSuccessMessage('Artwork deleted successfully');
+                        loadStatistics();
+                        loadAdminGallery();
+                        loadRecentArtworks();
+                    } catch (error) {
+                        showErrorMessage('Failed to delete artwork: ' + error.message);
+                    }
+                }
+            });
+            
+            // Add edit functionality
+            card.querySelector('.edit-btn').addEventListener('click', (e) => {
+                const artwork = artwork;
+                openEditModal(id, artwork);
+            });
+            
+            return card;
+        }
+    
+        // Edit Modal Functionality
+        function openEditModal(id, artwork) {
+            // Create modal elements
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <span class="close-modal">&times;</span>
+                    <h2>Edit Artwork</h2>
+                    <form id="editForm">
+                        <div class="form-group">
+                            <label>Caption</label>
+                            <input type="text" id="editCaption" value="${artwork.caption}" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Size</label>
+                            <select id="editSize" class="form-control" required>
+                                <option value="small" ${artwork.size === 'small' ? 'selected' : ''}>Small</option>
+                                <option value="medium" ${artwork.size === 'medium' ? 'selected' : ''}>Medium</option>
+                                <option value="large" ${artwork.size === 'large' ? 'selected' : ''}>Large</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Close modal
+            modal.querySelector('.close-modal').addEventListener('click', () => {
+                modal.remove();
+            });
+            
+            // Click outside to close
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+            
+            // Handle form submission
+            modal.querySelector('#editForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const newCaption = document.getElementById('editCaption').value;
+                const newSize = document.getElementById('editSize').value;
+                
+                try {
+                    await db.collection('artworks').doc(id).update({
+                        caption: newCaption,
+                        size: newSize
+                    });
+                    
+                    showSuccessMessage('Artwork updated successfully!');
+                    modal.remove();
+                    loadStatistics();
+                    loadAdminGallery();
+                    loadRecentArtworks();
+                } catch (error) {
+                    showErrorMessage('Failed to update artwork: ' + error.message);
+                }
+            });
+        }
+    
+        // Helper function for Cloudinary optimized URLs
+        function getOptimizedUrl(url, width) {
+            if (!url.includes('cloudinary.com')) return url;
+            return url.replace('/upload/', `/upload/w_${width},c_fill,q_auto,f_auto/`);
+        }
+    
+        // Show success message
+        function showSuccessMessage(message) {
+            statusMessage.textContent = message;
+            statusMessage.className = 'status-message success';
+            setTimeout(() => {
+                statusMessage.className = 'status-message';
+            }, 5000);
+        }
+    
+        // Show error message
+        function showErrorMessage(message) {
+            statusMessage.textContent = message;
+            statusMessage.className = 'status-message error';
+            setTimeout(() => {
+                statusMessage.className = 'status-message';
+            }, 5000);
+        }
+    
+        // Loading animation style (add to your CSS)
+        const style = document.createElement('style');
+        style.textContent = `
+            .loading {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border: 3px solid rgba(255,255,255,.3);
+                border-radius: 50%;
+                border-top-color: #fff;
+                animation: spin 1s ease-in-out infinite;
+                margin-right: 10px;
+            }
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+            .modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            }
+            .modal-content {
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                width: 90%;
+                max-width: 500px;
+                position: relative;
+            }
+            .close-modal {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                font-size: 24px;
+                cursor: pointer;
+            }
+        `;
+        document.head.appendChild(style);
     </script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="../firebase-config.js"></script>
+    
 </body>
 </html>
