@@ -1,9 +1,9 @@
-// Initialize Firebase
+ // Initialize Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyAqoIAYBdrdNGsisbiPmFClkXRG2DztHdk",
     authDomain: "gallerililala.firebaseapp.com",
     projectId: "gallerililala",
-    storageBucket: "gallerililala.firebasestorage.app",
+    storageBucket: "gallerililala.appspot.com",
     messagingSenderId: "321935317306",
     appId: "1:321935317306:web:aca94a16358eaa271fd803",
     measurementId: "G-71TJ36E7GE"
@@ -11,9 +11,10 @@ const firebaseConfig = {
 
   const app = firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
+  
   const provider = new firebase.auth.GoogleAuthProvider();
   const storage = firebase.storage();
-
+  const db = firebase.firestore();
 
 
 // Add this to your firebase-config.js
@@ -25,3 +26,4 @@ const cloudinaryConfig = {
 
 window.auth = auth;
 window.db = db;
+window.storage = storage;

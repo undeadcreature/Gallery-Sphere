@@ -1,105 +1,432 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Art Gallery</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Add your gallery-specific styles here */
-        .gallery-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            padding: 20px;
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --accent: #4895ef;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
         }
-        .artwork-item {
-            border-radius: 8px;
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-login {
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .admin-login:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Pinterest-style Masonry Grid */
+        .masonry-grid {
+            columns: 4 300px;
+            column-gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        .artwork-card {
+            break-inside: avoid;
+            margin-bottom: 1.5rem;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
-        }
-        .artwork-item:hover {
-            transform: translateY(-5px);
-        }
-        .artwork-item img {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            cursor: pointer;
-        }
-        .artwork-info {
-            padding: 15px;
             background: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
         }
-        .artwork-info h3 {
-            margin-bottom: 5px;
+
+        .artwork-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .artwork-img {
+            width: 100%;
+            display: block;
+            cursor: zoom-in;
+            transition: opacity 0.3s;
+        }
+
+        .artwork-img:hover {
+            opacity: 0.9;
+        }
+
+        .artwork-info {
+            padding: 1rem;
+        }
+
+        .artwork-title {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .artwork-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Lightbox Modal */
+        .lightbox-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .lightbox-modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .lightbox-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .lightbox-img {
+            max-width: 100%;
+            max-height: 80vh;
+            display: block;
+            border-radius: 5px;
+        }
+
+        .lightbox-caption {
+            color: white;
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .lightbox-actions {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .lightbox-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .lightbox-btn:hover {
+            background: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .close-lightbox {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .close-lightbox:hover {
+            background: #f72585;
+            transform: scale(1.1);
+        }
+
+        /* Loading Animation */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .masonry-grid {
+                columns: 2 200px;
+                padding: 1rem;
+            }
+
+            header h1 {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
+
 <body>
     <header>
-        <h1>Art Gallery</h1>
-        <a href="admin/login.html" class="admin-login">Admin Login</a>
+        <h1>Gallery</h1>
+
     </header>
 
     <main>
-        <div class="gallery-container" id="gallery">
+        <div class="masonry-grid" id="gallery">
             <!-- Artworks will be loaded here -->
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading artworks...</p>
         </div>
     </main>
 
+    <!-- Lightbox Modal -->
+    <div class="lightbox-modal" id="lightbox">
+        <div class="lightbox-content">
+            <div class="lightbox-actions">
+                <button class="lightbox-btn" id="downloadBtn" title="Download">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="close-lightbox" id="closeLightbox">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <img src="" alt="" class="lightbox-img" id="lightboxImg">
+            <p class="lightbox-caption" id="lightboxCaption"></p>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
+    <!-- Your config -->
     <script src="firebase-config.js"></script>
+
     <script>
-        // Load artworks for public gallery
-        async function loadGallery() {
-            try {
-                const snapshot = await db.collection('artworks')
-                    .orderBy('createdAt', 'desc')
-                    .get();
-                
-                const gallery = document.getElementById('gallery');
-                gallery.innerHTML = '';
-                
-                snapshot.forEach(doc => {
-                    const artwork = doc.data();
-                    const item = document.createElement('div');
-                    item.className = 'artwork-item';
-                    item.innerHTML = `
-                        <img src="${getOptimizedUrl(artwork.imageUrl, 500)}" 
-                             alt="${artwork.caption}"
-                             data-full="${artwork.imageUrl}">
-                        <div class="artwork-info">
-                            <h3>${artwork.caption}</h3>
-                            <p>${artwork.size.toUpperCase()}</p>
-                        </div>
-                    `;
-                    
-                    // Add click event for larger view
-                    item.querySelector('img').addEventListener('click', () => {
-                        viewFullImage(artwork.imageUrl, artwork.caption);
+        // Wait for Firebase to be ready
+        document.addEventListener('DOMContentLoaded', function () {
+            // DOM Elements
+            const gallery = document.getElementById('gallery');
+            const loading = document.getElementById('loading');
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightboxImg');
+            const lightboxCaption = document.getElementById('lightboxCaption');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const closeLightbox = document.getElementById('closeLightbox');
+
+            // Current artwork data for download
+            let currentArtwork = null;
+
+            // Load artworks for public gallery
+            async function loadGallery() {
+                try {
+                    loading.style.display = 'block';
+                    gallery.innerHTML = '';
+
+                    const snapshot = await db.collection('artworks')
+                        .orderBy('createdAt', 'desc')
+                        .get();
+
+                    if (snapshot.empty) {
+                        gallery.innerHTML = '<p class="no-artworks">No artworks available yet. Check back soon!</p>';
+                        return;
+                    }
+
+                    snapshot.forEach(doc => {
+                        const artwork = doc.data();
+                        createArtworkCard(artwork);
                     });
-                    
-                    gallery.appendChild(item);
-                });
-            } catch (error) {
-                console.error('Error loading gallery:', error);
+                } catch (error) {
+                    console.error('Error loading gallery:', error);
+                    gallery.innerHTML = '<p class="error">Failed to load artworks. Please try refreshing the page.</p>';
+                } finally {
+                    loading.style.display = 'none';
+                }
             }
-        }
-        
-        // Helper function for Cloudinary URLs
-        function getOptimizedUrl(url, width) {
-            if (!url.includes('cloudinary.com')) return url;
-            return url.replace('/upload/', `/upload/w_${width},c_fill,q_auto,f_auto/`);
-        }
-        
-        // View full image function
-        function viewFullImage(url, caption) {
-            // You can implement PhotoSwipe or a simple modal here
-            window.open(url, '_blank'); // Simple solution - opens in new tab
-        }
-        
-        // Initialize gallery
-        document.addEventListener('DOMContentLoaded', loadGallery);
+
+            // Create artwork card element
+            function createArtworkCard(artwork) {
+                const card = document.createElement('div');
+                card.className = 'artwork-card';
+
+                // Generate random height factor for Pinterest-style layout (0.7 to 1.5)
+
+
+                card.innerHTML = `
+                    <img src="${getOptimizedUrl(artwork.imageUrl, 400)}" 
+                         alt="${artwork.caption}"
+                         class="artwork-img"
+                         style="width: 100%; height: auto;"
+                         data-full="${artwork.imageUrl}">
+                     
+                `;
+
+                // Add click event for lightbox
+                card.querySelector('.artwork-img').addEventListener('click', () => {
+                    openLightbox(artwork);
+                });
+
+                gallery.appendChild(card);
+            }
+
+            // Open lightbox with artwork
+            function openLightbox(artwork) {
+                currentArtwork = artwork;
+                lightboxImg.src = artwork.imageUrl;
+                lightboxCaption.textContent = artwork.caption;
+                lightbox.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            // Close lightbox
+            function closeLightboxHandler() {
+                lightbox.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            // Download artwork
+
+            function downloadArtwork() {
+                if (!currentArtwork) return;
+
+                fetch(currentArtwork.imageUrl)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+
+                        const fileName = `artwork-${currentArtwork.caption.substring(0, 20).replace(/[^a-z0-9]/gi, '_')}.jpg`;
+                        link.download = fileName;
+
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url); // Free memory
+                    })
+                    .catch(error => {
+                        console.error('Download failed:', error);
+                        alert('Oops! Could not download the image.');
+                    });
+            }
+
+
+
+
+
+            // Helper function for Cloudinary URLs
+            function getOptimizedUrl(url) {
+                return url;
+
+            }
+
+            // Format date
+            function formatDate(date) {
+                if (!date) return '';
+                return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            }
+
+            // Event listeners
+            closeLightbox.addEventListener('click', closeLightboxHandler);
+            downloadBtn.addEventListener('click', downloadArtwork);
+
+            // Close lightbox when clicking outside image
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox) {
+                    closeLightboxHandler();
+                }
+            });
+
+            // Close lightbox with Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && lightbox.classList.contains('active')) {
+                    closeLightboxHandler();
+                }
+            });
+
+            // Initialize gallery
+            loadGallery();
+        });
     </script>
 </body>
+
 </html>

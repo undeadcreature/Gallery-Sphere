@@ -18,38 +18,7 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 
 
 //upload artwork function
-document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const file = document.getElementById('imageFile').files[0];
-    const size = document.getElementById('imageSize').value;
-    const caption = document.getElementById('imageCaption').value;
-
-    if (!file || !caption) {
-        showErrorMessage('Please fill in all fields.');
-        return;
-    }
-
-    try {
-        showUploadStatus('uploading artwork...', 'loading');
-        const imageUrl = await uploadToCloudinary(file);
-        //SAVE TO FIRESTORE
-        await db.collection('artworks').add({
-            imageUrl,
-            caption,
-            size,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        showSucessMessage('Artwork uploaded successfully!');
-        resetUploadForm();
-        loadAdminGallery();
-        loadStatistics();
-    } catch (error) {
-        showErrorMessage('Upload failed: ' + error.message);
-        console.error(error);
-    }
-});
-
+ 
 
 //cloudinary upload function
 async function uploadToCloudinary(file) {
@@ -93,7 +62,7 @@ function createArtworkElement(id, artwork) {
     const card = document.createElement('div');
     card.className = 'artwork-card';
     card.innerHTML = `
-        <img src= "${getOptimizedUrl(artwork,imgeUrl, 300)}"
+        <img src= "${getOptimizedUrl(artwork.imageUrl, 300)}"
             alt= "${artwork.caption}"
             class="artwork-img">
             <div class="artwork-body">
@@ -110,7 +79,7 @@ function createArtworkElement(id, artwork) {
                 <button class="action-btn edit-btn" data-id="${id}">
                     <i class="fas fa-edit"></i> Edit
                 </button>
-                <button class="action-btn edit-btn" data-id="${id}">
+                <button class="action-btn delete-btn" data-id="${id}">
                     <i class="fas fa-trash"></i> Delete
                 </button>
             </div>        
@@ -120,7 +89,7 @@ function createArtworkElement(id, artwork) {
             if (confirm ('Delete this artwork permanently?')){
                 try{
                     await db.collection('artworks').doc(id).delete();
-                    showSucessMessage('Artwork deleted sucessfully');
+                    showSuccessMessage('Artwork deleted sucessfully');
                     loadAdminGallery();
                     loadStatistics();
                 } catch (error) {
@@ -150,3 +119,21 @@ async function loadStatistics() {
     document.getElementById('mediumArtworks').textContent =  counts.medium;
     document.getElementById('largeArtworks').textContent =  counts.large;
 }
+
+function resetUploadForm() {
+    document.getElementById('imageFile').value = '';
+    document.getElementById('imageSize').value = 'small'; // or whatever default
+    document.getElementById('imageCaption').value = '';
+    showUploadStatus(''); // clears status box
+}
+
+
+function showUploadStatus(message) {
+    const statusBox = document.getElementById("uploadStatus");
+    if (statusBox) {
+      statusBox.innerText = message;
+    } else {
+      console.log(message); // fallback
+    }
+  }
+  
